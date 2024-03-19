@@ -43,7 +43,8 @@
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-
+uint32_t left_toggles = 0;
+uint32_t right_toggles = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -56,7 +57,49 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == S1_Pin){
+	  HAL_UART_Transmit(&huart2, "S1\r\n", 4, 10);
+	  left_toggles = 6;
+  }
+  if (GPIO_Pin == S2_Pin){
+  	  HAL_UART_Transmit(&huart2, "S2\r\n", 4, 10);
+  	  right_toggles = 6;
+  }
+  if (GPIO_Pin == S3_Pin){
+  	  HAL_UART_Transmit(&huart2, "S3\r\n", 4, 10);
 
+  }
+}
+void heartbeat (void)
+{
+	static uint32_t heartbeat_tick = 0;
+	if (heartbeat_tick < HAL_GetTick()){
+		heartbeat_tick = HAL_GetTick () + 500;
+		HAL_GPIO_TogglePin(D1_GPIO_Port, D1_Pin);
+	}
+}
+
+void turn_signal_left(void)
+{
+	static uint32_t turn_toggle_tick_left = 0;
+	if (turn_toggle_tick_left < HAL_GetTick()&& left_toggles > 0){
+		turn_toggle_tick_left = HAL_GetTick () + 500;
+		HAL_GPIO_TogglePin(D3_GPIO_Port, D3_Pin);
+		left_toggles--;
+	}
+}
+
+void turn_signal_right(void)
+{
+	static uint32_t turn_toggle_tick_right = 0;
+	if (turn_toggle_tick_right < HAL_GetTick()&& right_toggles > 0){
+		turn_toggle_tick_right = HAL_GetTick () + 500;
+		HAL_GPIO_TogglePin(D4_GPIO_Port, D4_Pin);
+		right_toggles--;
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -96,6 +139,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  heartbeat();
+	  turn_signal_left();
+	  turn_signal_right();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -209,11 +255,11 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(D4_GPIO_Port, D4_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pin : S1_Pin */
-  GPIO_InitStruct.Pin = S1_Pin;
+  /*Configure GPIO pins : S1_Pin S2_Pin */
+  GPIO_InitStruct.Pin = S1_Pin|S2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(S1_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : D1_Pin D3_Pin */
   GPIO_InitStruct.Pin = D1_Pin|D3_Pin;
@@ -241,6 +287,9 @@ static void MX_GPIO_Init(void)
 
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

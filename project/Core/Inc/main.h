@@ -60,6 +60,9 @@ void Error_Handler(void);
 #define S1_Pin GPIO_PIN_1
 #define S1_GPIO_Port GPIOA
 #define S1_EXTI_IRQn EXTI1_IRQn
+#define S2_Pin GPIO_PIN_4
+#define S2_GPIO_Port GPIOA
+#define S2_EXTI_IRQn EXTI4_IRQn
 #define D1_Pin GPIO_PIN_5
 #define D1_GPIO_Port GPIOA
 #define D3_Pin GPIO_PIN_7
