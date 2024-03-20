@@ -69,7 +69,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   }
   if (GPIO_Pin == S3_Pin){
   	  HAL_UART_Transmit(&huart2, "S3\r\n", 4, 10);
-
+  	  right_toggles = 5;
+  	  left_toggles = 5;
   }
 }
 void heartbeat (void)
@@ -84,20 +85,39 @@ void heartbeat (void)
 void turn_signal_left(void)
 {
 	static uint32_t turn_toggle_tick_left = 0;
-	if (turn_toggle_tick_left < HAL_GetTick()&& left_toggles > 0){
-		turn_toggle_tick_left = HAL_GetTick () + 500;
-		HAL_GPIO_TogglePin(D3_GPIO_Port, D3_Pin);
-		left_toggles--;
+	if (turn_toggle_tick_left < HAL_GetTick()){
+		if (left_toggles > 0){
+			turn_toggle_tick_left = HAL_GetTick () + 500;
+			HAL_GPIO_TogglePin(D3_GPIO_Port, D3_Pin);
+			left_toggles--;
+		}else {
+			HAL_GPIO_WritePin(D3_GPIO_Port, D3_Pin, 1);
+		}
 	}
 }
 
 void turn_signal_right(void)
 {
 	static uint32_t turn_toggle_tick_right = 0;
-	if (turn_toggle_tick_right < HAL_GetTick()&& right_toggles > 0){
-		turn_toggle_tick_right = HAL_GetTick () + 500;
-		HAL_GPIO_TogglePin(D4_GPIO_Port, D4_Pin);
-		right_toggles--;
+	if (turn_toggle_tick_right < HAL_GetTick()){
+		if (right_toggles > 0){
+			turn_toggle_tick_right = HAL_GetTick () + 500;
+			HAL_GPIO_TogglePin(D4_GPIO_Port, D4_Pin);
+			right_toggles--;
+		} else {
+			HAL_GPIO_WritePin(D4_GPIO_Port, D4_Pin, 1);
+		}
+	}
+}
+
+void turn_signal_park(void)
+{
+	static uint32_t turn_toggle_tick_park = 0;
+	if (turn_toggle_tick_park < HAL_GetTick()){
+		if (right_toggles > 0 && left_toggles > 0){
+			turn_signal_right();
+			turn_signal_left();
+		}
 	}
 }
 /* USER CODE END 0 */
@@ -142,6 +162,7 @@ int main(void)
 	  heartbeat();
 	  turn_signal_left();
 	  turn_signal_right();
+	  turn_signal_park();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
