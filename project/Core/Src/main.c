@@ -45,6 +45,12 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 uint32_t left_toggles = 0;
 uint32_t right_toggles = 0;
+uint32_t left_last_press_tick = 0;
+uint32_t right_last_press_tick = 0;
+uint32_t park_toggles = 0;
+uint32_t park_last_press_tick = 0;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,18 +65,40 @@ static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN 0 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  if (GPIO_Pin == S1_Pin){
-	  HAL_UART_Transmit(&huart2, "S1\r\n", 4, 10);
-	  left_toggles = 6;
+	if (GPIO_Pin == S1_Pin) {
+			HAL_UART_Transmit(&huart2, "S1\r\n", 4, 10);
+			if (HAL_GetTick() < (left_last_press_tick + 300)) { // if last press was in the last 300ms
+				left_toggles = 0xFFFFFF; // a long time toggling (infinite)
+			} else {
+				left_toggles = 6;
+			}
+			left_last_press_tick = HAL_GetTick();
+	} else if (GPIO_Pin == S2_Pin || GPIO_Pin == S3_Pin) {
+			left_toggles = 0;
+		}
+
+	if (GPIO_Pin == S2_Pin){
+		HAL_UART_Transmit(&huart2, "S2\r\n", 4, 10);
+		if (HAL_GetTick() < (right_last_press_tick + 300)){
+			right_toggles = 0xFFFFFF;
+		} else {
+			right_toggles = 6;
+  	  }
+  	  right_last_press_tick = HAL_GetTick();
+  } else if (GPIO_Pin == S1_Pin || GPIO_Pin == S3_Pin ){
+	  right_toggles = 0;
   }
-  if (GPIO_Pin == S2_Pin){
-  	  HAL_UART_Transmit(&huart2, "S2\r\n", 4, 10);
-  	  right_toggles = 6;
-  }
+
   if (GPIO_Pin == S3_Pin){
   	  HAL_UART_Transmit(&huart2, "S3\r\n", 4, 10);
-  	  right_toggles = 5;
-  	  left_toggles = 5;
+  	  if (HAL_GetTick() < (park_last_press_tick + 300)){
+  		  right_toggles = 0;
+  		  left_toggles = 0;
+  	  }else {
+  		  right_toggles = 6;
+  		  left_toggles = 6;
+  	  }
+  	  park_last_press_tick = HAL_GetTick();
   }
 }
 void heartbeat (void)
@@ -117,6 +145,8 @@ void turn_signal_park(void)
 		if (right_toggles > 0 && left_toggles > 0){
 			turn_signal_right();
 			turn_signal_left();
+			right_toggles++;
+			left_toggles++;
 		}
 	}
 }
